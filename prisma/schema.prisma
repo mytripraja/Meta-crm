@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  WAITING
+  SALE
+  FAILED
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         Role         @default(STAFF)
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  assignedLeads Lead[]      @relation("AssignedStaff")
+  notes         Note[]
+  followUps     FollowUp[]
+  pushSubs      PushSubscription[]
+}
+
+model Lead {
+  id                 String     @id @default(uuid())
+  phoneNumber        String     @unique
+  name               String?
+  whatsappProfileName String?
+  status             LeadStatus @default(NEW)
+  assignedStaffId    String?
+  assignedStaff      User?      @relation("AssignedStaff", fields: [assignedStaffId], references: [id])
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  deleted            Boolean    @default(false)
+
+  notes     Note[]
+  followUps FollowUp[]
+  messages  Message[]
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  staffId   String
+  staff     User     @relation(fields: [staffId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model FollowUp {
+  id                 String    @id @default(uuid())
+  leadId             String
+  lead               Lead      @relation(fields: [leadId], references: [id])
+  staffId            String
+  staff              User      @relation(fields: [staffId], references: [id])
+  scheduledAt        DateTime
+  remindBeforeMinutes Int      @default(10)
+  notified           Boolean   @default(false)
+  completed          Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  direction String   // "in" or "out"
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
