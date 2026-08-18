@@ -21,7 +21,10 @@ router.get("/webhook", (req, res) => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (mode === "subscribe" && token === process.env.META_WEBHOOK_VERIFY_TOKEN) {
+  const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN || "rds_crm_secure_123";
+
+  if (mode === "subscribe" && token === verifyToken) {
+    console.log("WEBHOOK_VERIFIED");
     return res.status(200).send(challenge);
   }
   res.sendStatus(403);

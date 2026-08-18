@@ -36,8 +36,14 @@ app.use("/api/inbox", inboxRoutes);
 app.use("/api/mappings", mappingRoutes);
 app.use("/api/conversion", conversionRoutes);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`LeadCRM backend running on port ${PORT}`);
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`LeadCRM backend running on port ${PORT}`);
+    startReminderCron();
+  });
+} else {
   startReminderCron();
-});
+}
+
+export default app;

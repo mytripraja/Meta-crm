@@ -1,11 +1,15 @@
 import webpush from "web-push";
 import prisma from "../lib/prisma.js";
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || "mailto:admin@example.com",
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || "mailto:admin@example.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn("VAPID keys not set. Push notifications will be disabled.");
+}
 
 export async function sendPushToUser(userId, payload) {
   const subs = await prisma.pushSubscription.findMany({ where: { userId } });
