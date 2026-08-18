@@ -33,6 +33,7 @@ model User {
   notes         Note[]
   followUps     FollowUp[]
   pushSubs      PushSubscription[]
+  deviceTokens  DeviceToken[]
 }
 
 model Lead {
@@ -43,13 +44,21 @@ model Lead {
   status             LeadStatus @default(NEW)
   assignedStaffId    String?
   assignedStaff      User?      @relation("AssignedStaff", fields: [assignedStaffId], references: [id])
+  source             String?
+  metaLeadId         String?
+  metaFormId         String?
+  metaAdId           String?
+  aiScore            Int?
+  aiGrade            String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   deleted            Boolean    @default(false)
 
-  notes     Note[]
-  followUps FollowUp[]
-  messages  Message[]
+  notes          Note[]
+  followUps      FollowUp[]
+  messages       Message[]
+  whatsappLogs   WhatsAppLog[]
+  conversations  Conversation[]
 }
 
 model Note {
@@ -92,4 +101,81 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+}
+
+model WhatsAppLog {
+  id             String   @id @default(uuid())
+  leadId         String?
+  lead           Lead?    @relation(fields: [leadId], references: [id])
+  phoneNumber    String
+  contactName    String?
+  messagePreview String?
+  capturedAt     DateTime @default(now())
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  platform  String   @default("android")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, token])
+}
+
+model MetaIntegration {
+  id              String   @id @default(uuid())
+  userId          String
+  pageId          String   @unique
+  pageName        String?
+  accessToken     String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  conversions MetaConversionConfig[]
+}
+
+model MetaConversionConfig {
+  id              String   @id @default(uuid())
+  integrationId   String
+  integration     MetaIntegration @relation(fields: [integrationId], references: [id])
+  pixelId         String
+  accessToken     String
+  partnerAgent    String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model Conversation {
+  id                      String   @id @default(uuid())
+  leadId                  String
+  lead                    Lead     @relation(fields: [leadId], references: [id])
+  platform                String
+  platformConversationId  String?
+  lastMessageAt           DateTime
+  unreadCount             Int      @default(0)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+
+  messages InboxMessage[]
+}
+
+model InboxMessage {
+  id                String   @id @default(uuid())
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id])
+  direction         String
+  content           String
+  platformMessageId String?
+  createdAt         DateTime @default(now())
+}
+
+model FieldMapping {
+  id              String   @id @default(uuid())
+  metaFieldName   String
+  crmFieldName    String
+  isRequired      Boolean  @default(false)
+  defaultValue    String?
+  createdAt       DateTime @default(now())
 }
